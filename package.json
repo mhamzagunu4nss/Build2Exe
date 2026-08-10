@@ -31,6 +31,7 @@
     "@mui/joy": "^5.0.0-beta.52",
     "@mui/material": "^9.0.1",
     "@mui/x-date-pickers": "^9.3.0",
+    "@docuseal/signature-maker-react": "^1.0.2",
     "@simple-table/react": "^3.0.13",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.18.0",

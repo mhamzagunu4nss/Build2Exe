@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+@keyframes slideShow {
+  0%,
+  100% {
+    background-image: url('/images/gettyimages-102037645-2048x2048.jpg');
+  }
+  33% {
+    background-image: url('/images/gettyimages-923867258-2048x2048.jpg');
+  }
+  66% {
+    background-image: url('/images/gettyimages-2217561304-2048x2048.jpg');
+  }
+}
+
+.animate-slideshow {
+  animation: slideShow 15s infinite;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  /* This ensures the image transition doesn't "snap" instantly */
+  transition: background-image 1s ease-in-out;
+}

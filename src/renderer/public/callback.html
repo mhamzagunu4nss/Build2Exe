@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ministry Account Authorization</title>
+  </head>
+  <body
+    style="
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 80px;
+      background: #f8fafc;
+      color: #1e293b;
+    "
+  >
+    <div
+      style="
+        max-width: 550px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      "
+    >
+      <h2 style="color: #1768da; margin-bottom: 8px">Secure Authentication Successful 🎉</h2>
+      <p style="font-size: 14px; color: #64748b; margin-bottom: 24px">
+        Your Ministry account has been securely verified.
+      </p>
+
+      <label
+        style="
+          display: block;
+          text-align: left;
+          font-weight: bold;
+          font-size: 13px;
+          color: #475569;
+          margin-bottom: 6px;
+        "
+        >Authorization Access Code:</label
+      >
+      <input
+        type="text"
+        id="code-box"
+        readonly
+        style="
+          width: 100%;
+          padding: 12px;
+          font-size: 15px;
+          text-align: center;
+          border: 2px solid #e2e8f0;
+          border-radius: 6px;
+          background: #f1f5f9;
+          box-sizing: border-box;
+          margin-bottom: 20px;
+        "
+      />
+
+      <p style="font-size: 13px; color: #94a3b8">
+        Copy this code perfectly and paste it back into your app authorization code field.
+      </p>
+    </div>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search)
+      const code = urlParams.get('code')
+      if (code) {
+        document.getElementById('code-box').value = code
+      } else {
+        document.body.innerHTML =
+          '<h2>Secure token payload missing. Please restart from the app.</h2>'
+      }
+    </script>
+  </body>
+</html>

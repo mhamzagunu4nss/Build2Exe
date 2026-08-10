@@ -1,0 +1,93 @@
+{
+  "name": "docutrack-desktop",
+  "version": "1.0.0",
+  "description": "An Electron application with React",
+  "main": "./app-build/main/index.js",
+  "author": "example.com",
+  "homepage": "https://electron-vite.org",
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint --cache .",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "npm run build && electron-builder --dir",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "make:win": "npm run build && electron-forge make --platform win32"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@google-cloud/local-auth": "^3.0.1",
+    "@google-cloud/pubsub": "^5.3.1",
+    "@handsontable/react": "^16.2.0",
+    "@handsontable/react-wrapper": "^17.0.1",
+    "@mui/icons-material": "^9.0.0",
+    "@mui/joy": "^5.0.0-beta.52",
+    "@mui/material": "^9.0.1",
+    "@mui/x-date-pickers": "^9.3.0",
+    "@simple-table/react": "^3.0.13",
+    "@tailwindcss/vite": "^4.2.2",
+    "axios": "^1.18.0",
+    "big.js": "^7.0.1",
+    "dayjs": "^1.11.20",
+    "electron-log": "^5.4.4",
+    "google-auth-library": "^10.7.0",
+    "googleapis": "^173.0.0",
+    "handsontable": "^17.0.1",
+    "is-online": "^12.0.2"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-toolkit/eslint-config": "^2.1.0",
+    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.5.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "postcss": "^8.5.10",
+    "prettier": "^3.7.4",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "tailwindcss": "^4.2.2",
+    "vite": "^7.2.6"
+  },
+  "build": {
+    "appId": "com.docutrack.mosr",
+    "productName": "Docutrack",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "app-build/**/*"
+    ],
+    "asar": false,
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "."
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "resources/mosr-logo.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}

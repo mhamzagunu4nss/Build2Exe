@@ -1,0 +1,27 @@
+node_modules
+out
+app-build
+dist
+forge-out
+temp-package
+
+# Credentials - never commit these
+resources/google_drive_config/*.json
+resources/google_drive_config/credentials.json
+resources/google_drive_config/desktop-credentials.json
+resources/google_drive_config/token.json
+resources/google_drive_config/subscription-name-or-id.json
+*.pem
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/settings.json

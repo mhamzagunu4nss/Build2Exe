@@ -69,6 +69,7 @@
   "build": {
     "appId": "com.docutrack.mosr",
     "productName": "Docutrack",
+    "publish": null,
     "directories": {
       "output": "dist"
     },

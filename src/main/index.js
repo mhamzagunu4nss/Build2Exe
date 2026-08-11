@@ -36,8 +36,14 @@ import {
 const { google } = require('googleapis')
 
 import Big from 'big.js'
-import isOnlineInstance from 'is-online'
-const isOnline = isOnlineInstance.default || isOnlineInstance
+let isOnlineFn = null
+async function isOnline(...args) {
+  if (!isOnlineFn) {
+    const mod = await import('is-online')
+    isOnlineFn = mod.default
+  }
+  return isOnlineFn(...args)
+}
 
 process.on('uncaughtException', (error) => {
   const message = error ? error.message : 'Unknown error'

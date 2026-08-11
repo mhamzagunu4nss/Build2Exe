@@ -8,7 +8,13 @@ console.warn = log.warn
 
 log.info('Application starting in production mode...')
 
+
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron'
+import started from 'electron-squirrel-startup'
+
+if (started) {
+  app.quit()
+}
 import fs, { promises as fsPromises } from 'fs'
 import {
   generateAuthUrl,

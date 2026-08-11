@@ -6,6 +6,7 @@ module.exports = {
     name: 'Docutrack',
     executableName: 'Docutrack',
     icon: 'resources/mosr-logo',
+    extraResource: ['resources'],
     ignore: [/^\/temp-package/, /^\/\.git/, /^\/dist/]
   },
   rebuildConfig: {},

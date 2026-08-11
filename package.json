@@ -19,6 +19,7 @@
     "make:win": "npm run build && electron-forge make --platform win32"
   },
   "dependencies": {
+    "@docuseal/signature-maker-react": "^1.0.2",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@emotion/react": "^11.14.0",
@@ -31,13 +32,13 @@
     "@mui/joy": "^5.0.0-beta.52",
     "@mui/material": "^9.0.1",
     "@mui/x-date-pickers": "^9.3.0",
-    "@docuseal/signature-maker-react": "^1.0.2",
     "@simple-table/react": "^3.0.13",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.18.0",
     "big.js": "^7.0.1",
     "dayjs": "^1.11.20",
     "electron-log": "^5.4.4",
+    "electron-squirrel-startup": "^1.0.1",
     "google-auth-library": "^10.7.0",
     "googleapis": "^173.0.0",
     "handsontable": "^17.0.1",

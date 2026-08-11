@@ -1,4 +1,4 @@
-import { dialog } from 'electron'
+import { app, dialog } from 'electron'
 import {
   getProjectId,
   loadAuthClient,
@@ -13,17 +13,17 @@ const fs = require('fs').promises
 const { google } = require('googleapis')
 const { PubSub } = require('@google-cloud/pubsub')
 
-const SUBSCRIPTION_NAME_OR_ID_PATH = is.dev
-  ? path.join(__dirname, '../../resources/google_drive_config/subscription-name-or-id.json')
-  : path.join(process.resourcesPath, 'google_drive_config/subscription-name-or-id.json')
+const SUBSCRIPTION_NAME_OR_ID_PATH = path.join(
+  app.getPath('userData'),
+  'subscription-name-or-id.json'
+)
 
-const TOPIC_NAME_OR_ID_PATH = is.dev
-  ? path.join(__dirname, '../../resources/google_drive_config/topic-name-or-id.json')
-  : path.join(process.resourcesPath, 'google_drive_config/topic-name-or-id.json')
+const TOPIC_NAME_OR_ID_PATH = path.join(app.getPath('userData'), 'topic-name-or-id.json')
 
-export const UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH = is.dev
-  ? path.join(__dirname, '../../resources/google_drive_config/receiveTableId.json')
-  : path.join(process.resourcesPath, 'google_drive_config/receiveTableId.json')
+export const UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH = path.join(
+  app.getPath('userData'),
+  'receiveTableId.json'
+)
 
 const despatchTableDir = is.dev
   ? path.join(__dirname, '../../resources/despatch_table')

@@ -20,6 +20,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Write Google credentials
+        shell: pwsh
+        run: |
+          '${{ secrets.GDRIVE_CREDENTIALS_JSON }}' | Out-File -FilePath resources\google_drive_config\credentials.json -Encoding utf8 -NoNewline
+
       - name: Build Windows installer
         run: npm run build:win
 

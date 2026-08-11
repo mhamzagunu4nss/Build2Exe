@@ -1,4 +1,5 @@
 import { is } from '@electron-toolkit/utils'
+import { app } from 'electron'
 
 const { google } = require('googleapis')
 const fs = require('fs/promises')
@@ -8,9 +9,7 @@ const CREDENTIALS_PATH = is.dev
   ? path.join(__dirname, '../../resources/google_drive_config/credentials.json')
   : path.join(process.resourcesPath, 'google_drive_config/credentials.json')
 
-const TOKEN_PATH = is.dev
-  ? path.join(__dirname, '../../resources/google_drive_config/token.json')
-  : path.join(process.resourcesPath, 'google_drive_config/token.json')
+const TOKEN_PATH = path.join(app.getPath('userData'), 'token.json')
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive',

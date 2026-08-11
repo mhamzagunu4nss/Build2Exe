@@ -8,13 +8,8 @@ console.warn = log.warn
 
 log.info('Application starting in production mode...')
 
-
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, net, protocol } from 'electron'
 import started from 'electron-squirrel-startup'
-
-if (started) {
-  app.quit()
-}
 import fs, { promises as fsPromises } from 'fs'
 import {
   generateAuthUrl,
@@ -39,6 +34,10 @@ import {
   stopListening,
   UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH
 } from '../renderer/src/helpers/helper-functions'
+
+if (started) {
+  app.quit()
+}
 const { google } = require('googleapis')
 
 import Big from 'big.js'
@@ -297,6 +296,20 @@ function createWindow() {
     }
   })
 
+  // 1. Intercept links requesting a new window (e.g. target="_blank")
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    electron.shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  // 2. Intercept standard in-frame link navigations (e.g. standard <a> tags)
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      event.preventDefault()
+      electron.shell.openExternal(url)
+    }
+  })
+
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     mainWindow.maximize()
@@ -309,11 +322,6 @@ function createWindow() {
       mainWindow.show()
       mainWindow.setOpacity(1)
     }, 4000)
-  })
-
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {

@@ -21,7 +21,7 @@ jobs:
         run: npm install
 
       - name: Build Windows installer
-        run: npm run make:win
+        run: npm run build:win
 
       - name: List all exe files (debug)
         run: Get-ChildItem -Recurse -Include *.exe | Select-Object FullName
@@ -32,5 +32,5 @@ jobs:
         with:
           name: docutrack-installer
           path: |
-            **/*.exe
+            dist/*.exe
           if-no-files-found: warn

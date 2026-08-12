@@ -22,8 +22,16 @@ jobs:
 
       - name: Write Google credentials
         shell: pwsh
+        env:
+          GDRIVE_JSON: ${{ secrets.GDRIVE_CREDENTIALS_JSON }}
         run: |
-          '${{ secrets.GDRIVE_CREDENTIALS_JSON }}' | Out-File -FilePath resources\google_drive_config\credentials.json -Encoding utf8 -NoNewline
+          Set-Content -Path resources\google_drive_config\credentials.json -Value $env:GDRIVE_JSON -Encoding utf8 -NoNewline
+
+      - name: Verify credentials file (debug)
+        shell: pwsh
+        run: |
+          Get-Item resources\google_drive_config\credentials.json | Select-Object Length
+          Get-Content resources\google_drive_config\credentials.json -Raw | Select-Object -First 1
 
       - name: Build Windows installer
         run: npm run build:win

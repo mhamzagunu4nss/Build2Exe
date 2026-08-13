@@ -124,13 +124,12 @@ const CREDENTIALS_PATH = is.dev
   ? path.join(__dirname, '../../resources/google_drive_config/credentials.json')
   : path.join(process.resourcesPath, 'google_drive_config/credentials.json')
 
-const TOKEN_PATH = is.dev
-  ? path.join(__dirname, '../../resources/google_drive_config/token.json')
-  : path.join(process.resourcesPath, 'google_drive_config/token.json')
+const TOKEN_PATH = path.join(app.getPath('userData'), 'token.json')
 
-const UPLOADED_DESPATCH_TABLE_ID_JSON_FILE_PATH = is.dev
-  ? path.join(__dirname, '../../resources/google_drive_config/despatchTableId.json')
-  : path.join(process.resourcesPath, 'google_drive_config/despatchTableId.json')
+const UPLOADED_DESPATCH_TABLE_ID_JSON_FILE_PATH = path.join(
+  app.getPath('userData'),
+  'despatchTableId.json'
+)
 
 const splashHtmlPath = is.dev
   ? path.join(__dirname, '../../resources/splash.html')

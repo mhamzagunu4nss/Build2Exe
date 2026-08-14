@@ -86,6 +86,7 @@ const PubSubTable = () => {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSelectable, setIsSelectable] = useState(false)
   const isFirstMountForPubSub = useRef(true)
+  const isDeletingRowRef = useRef(null)
   const [dontSave, setDontSave] = useState(true)
 
   useEffect(() => {
@@ -154,29 +155,37 @@ const PubSubTable = () => {
   }, [])
 
   useEffect(() => {
+    if (!pubSubTableData || pubSubTableData.length === 0) return
+
+    let needsCleanup = false
+    const cleanedData = pubSubTableData.map((row) => {
+      const isReceiverEmpty = !row.pubsub_receiver || row.pubsub_receiver.toString().trim() === ''
+      if (isReceiverEmpty && row.pubsub_signature && row.pubsub_signature !== '') {
+        needsCleanup = true
+        return { ...row, pubsub_signature: '' }
+      }
+      return row
+    })
+
+    if (needsCleanup) {
+      setPubSubTableData(cleanedData)
+      return
+    }
+
     const shipNewPubSubDataToSave = async () => {
       setLoadingMessagePubSubTable('Saving PubSub Table Data...')
-
       await window.electron.ipcRenderer.invoke(
         'save-pub-sub-table-data-asynchronous',
         pubSubTableData
       )
-      setTimeout(() => {
-        setIsLoadingForPubSubTable(false)
-      }, 100)
+      setTimeout(() => setIsLoadingForPubSubTable(false), 100)
       setIsEditingForPubSubTable(false)
     }
 
-    if (
-      !dontSave &&
-      !isDeleting &&
-      pubSubTableData !== null &&
-      pubSubTableData !== undefined &&
-      pubSubTableData.length !== 0
-    ) {
+    if (!dontSave && !isDeleting && pubSubTableData.length !== 0) {
       shipNewPubSubDataToSave()
     }
-  }, [pubSubTableData, isDeleting, dontSave, pubSubTableData.length])
+  }, [pubSubTableData, dontSave, isDeleting, pubSubTableData.length])
 
   useEffect(() => {
     async function publishMessage(message) {
@@ -318,6 +327,7 @@ const PubSubTable = () => {
   }, [viewMode])
 
   const handleCellEdit = ({ accessor, newValue, row }) => {
+    console.log('[pubsub] handleCellEdit fired:', { accessor, newValue, rowId: row.id })
     if (newValue === '+ Add New Department') {
       localStorage.setItem('pubsubActiveEditedRow', JSON.stringify(row))
       localStorage.setItem('pubsubActiveEditedAccessor', accessor)
@@ -343,6 +353,52 @@ const PubSubTable = () => {
       return safePrev.map((item) => (item.id === row.id ? { ...item, [accessor]: newValue } : item))
     })
   }
+  useEffect(() => {
+    if (!rowForPubSubTable) return
+
+    const isRowEmpty =
+      (!rowForPubSubTable.pubsub_dateofreceived ||
+        String(rowForPubSubTable.pubsub_dateofreceived).trim() === '') &&
+      (!rowForPubSubTable.pubsub_registrynumber ||
+        rowForPubSubTable.pubsub_registrynumber.trim() === '') &&
+      (!rowForPubSubTable.pubsub_towhomreceived ||
+        rowForPubSubTable.pubsub_towhomreceived.trim() === '') &&
+      (!rowForPubSubTable.pubsub_numberofletter ||
+        rowForPubSubTable.pubsub_numberofletter.trim() === '') &&
+      (!rowForPubSubTable.pubsub_receiver || rowForPubSubTable.pubsub_receiver.trim() === '') &&
+      (!rowForPubSubTable.pubsub_remarks || rowForPubSubTable.pubsub_remarks.trim() === '')
+
+    if (!isRowEmpty) return
+
+    const rowKey = `${rowForPubSubTable.id}-${rowForPubSubTable.subscriptionNameOrId}`
+    if (isDeletingRowRef.current === rowKey) return
+    isDeletingRowRef.current = rowKey
+
+    const removeRow = async () => {
+      setIsDeleting(true)
+      const rowDeleted = await window.electron.ipcRenderer.invoke(
+        'delete-row',
+        JSON.stringify(rowForPubSubTable)
+      )
+      if (rowDeleted) {
+        setPubSubTableData((prev) =>
+          prev.filter(
+            (item) =>
+              !(
+                item.id === rowForPubSubTable.id &&
+                item.subscriptionNameOrId === rowForPubSubTable.subscriptionNameOrId
+              )
+          )
+        )
+      } else {
+        console.warn('[pubsub-cleanup] delete-row failed for:', rowForPubSubTable.id)
+      }
+      isDeletingRowRef.current = null
+      setIsDeleting(false)
+      setRowForPubSubTable(null)
+    }
+    removeRow()
+  }, [rowForPubSubTable])
 
   const columnHeaders = [
     { accessor: 'id', label: 'ID', width: 50, isSortable: true, type: 'number' },

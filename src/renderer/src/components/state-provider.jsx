@@ -66,6 +66,7 @@ export const AppProvider = ({ children }) => {
     columnReordering: true,
 
     receive_locked: false,
+    onlineSyncEnabled: true,
 
     // Explicit Column Alignments...
     align_pubsub_dateofreceived: 'left',

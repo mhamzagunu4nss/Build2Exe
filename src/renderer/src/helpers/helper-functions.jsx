@@ -232,7 +232,7 @@ export async function splitTableDataInToToChunks(updatedtabledata) {
   Big.DP = 0
   Big.RM = Big.roundUp
   const numberOfRows = new Big(updatedtabledata.length)
-  const chunkSize = new Big(500)
+  const chunkSize = new Big(1000)
   const numberOfPages = numberOfRows.div(chunkSize)
   return numberOfPages
 }

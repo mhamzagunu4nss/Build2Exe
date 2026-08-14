@@ -66,6 +66,11 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
   const isFirstMountForUpload = useRef(true)
   const isInitializingAssets = useRef(true)
   const isDownloadRefresh = useRef(false)
+  const isChangingPage = useRef(false)
+  const isLoadingRef = useRef(isLoading)
+  useEffect(() => {
+    isLoadingRef.current = isLoading
+  }, [isLoading])
   const [dontSave, setDontSave] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -89,7 +94,7 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
         setPageNumber(response.lastPage)
       }
 
-      setIsLoading(false)
+      // setIsLoading(false)
     },
 
     setPage: async (targetPage) => {
@@ -224,6 +229,7 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
       rowForDespatch.towhomsent !== '+ Add New Department' &&
       rowForDespatch.despatcher !== '+ Add New Worker' &&
       viewMode === 'Despatch' &&
+      tableSettings.onlineSyncEnabled !== false &&
       updateGoogleDriveFiles()
 
     async function publishMessage(message) {
@@ -264,6 +270,7 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
       rowForDespatch !== undefined &&
       rowForDespatch.towhomsent !== '+ Add New Department' &&
       rowForDespatch.despatcher !== '+ Add New Worker' &&
+      tableSettings.onlineSyncEnabled !== false &&
       publishMessage(rowForDespatch)
   }, [rowForDespatch, despatchTableData, viewMode, isOnline])
 
@@ -286,14 +293,12 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
           window.electron.ipcRenderer.invoke('load-people-enum-data-asynchronous')
         ])
 
-      if (totalNumberOfRows) {
-        setTotalNumberOfRows(totalNumberOfRows)
-      }
+      if (totalNumberOfRows) setTotalNumberOfRows(totalNumberOfRows)
 
       const currentUploadedIdsMap = uploadedIdsMap || {}
       setUploadedPageDriveIds(currentUploadedIdsMap)
 
-      if (!currentUploadedIdsMap[activePage]) {
+      if (tableSettings.onlineSyncEnabled !== false && !currentUploadedIdsMap[activePage]) {
         const uploadResponse = await window.electron.ipcRenderer.invoke(
           'upload-despatch-table-data-to-google-drive',
           activePage
@@ -315,9 +320,19 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
       if (tableApiRef.current) {
         await tableApiRef.current.setPage(activePage)
       }
-      setTimeout(() => {
+
+      setTimeout(async () => {
         isInitializingAssets.current = false
-        setIsLoading(false)
+        const hasInternet = await window.electron.ipcRenderer.invoke('check-actual-internet')
+        setIsOnline(hasInternet)
+
+        if (!hasInternet) {
+          console.log('you are offline')
+          setLoadingMessage('Fix Your Internet Connection...')
+          setIsLoading(true)
+        } else {
+          setIsLoading(false)
+        }
       }, 300)
     }
 
@@ -363,19 +378,20 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
   useEffect(() => {
     if (isInitializingAssets.current) return
     if (isOnline) {
-      if (isLoading && !isDownloadingDispacthPageData) {
+      if (isLoadingRef.current && !isDownloadingDispacthPageData && !isChangingPage.current) {
         setIsLoading(false)
       }
     } else {
       setLoadingMessage('Fix Your Internet Connection...')
-      if (!isLoading) setIsLoading(true)
+
+      if (!isLoadingRef.current) setIsLoading(true)
 
       const abortDriveDownload = async () => {
         await window.electron.ipcRenderer.invoke('abort-drive-download')
       }
       if (isDownloadingDispacthPageData) abortDriveDownload()
     }
-  }, [isOnline, isDownloadingDispacthPageData, isLoading])
+  }, [isOnline, isDownloadingDispacthPageData])
   useEffect(() => {
     if (isFirstMountForUpload.current) {
       isFirstMountForUpload.current = false
@@ -383,6 +399,7 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
     }
 
     const ensurePageUploaded = async () => {
+      if (tableSettings.onlineSyncEnabled === false) return
       if (!uploadedPageDriveIds[pageNumber]) {
         const uploadResponse = await window.electron.ipcRenderer.invoke(
           'upload-despatch-table-data-to-google-drive',
@@ -408,17 +425,22 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
     localStorage.setItem('despatchPageNumber', pageNumber)
 
     const loadMatchingPageData = async () => {
+      isChangingPage.current = true
       setIsLoading(true)
 
-      const tableData = await window.electron.ipcRenderer.invoke(
-        'load-despatch-table-data-asynchronous',
-        pageNumber
-      )
+      try {
+        const tableData = await window.electron.ipcRenderer.invoke(
+          'load-despatch-table-data-asynchronous',
+          pageNumber
+        )
 
-      if (tableData) {
-        setDespatchTableRowData(tableData)
+        if (tableData) {
+          setDespatchTableRowData(tableData)
+        }
+      } finally {
+        isChangingPage.current = false
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
 
     loadMatchingPageData()
@@ -636,7 +658,7 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
           setPageNumber(page)
         }
       }}
-      rowsPerPage={500}
+      rowsPerPage={1000}
       defaultHeaders={dynamicHeaders}
       rows={despatchTableData}
       height={'800px'}

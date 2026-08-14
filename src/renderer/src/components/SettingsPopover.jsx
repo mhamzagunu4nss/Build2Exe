@@ -555,6 +555,21 @@ export default function SettingsPopover({
             System & Maintenance
           </h3>
           <div className="flex flex-col gap-2 w-full mt-2">
+            <div className="border border-dashed border-slate-200 p-2 rounded bg-slate-50 flex flex-col gap-1">
+              <label className="flex items-center justify-between cursor-pointer text-xs">
+                <span className="font-semibold">Enable Online Sync</span>
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  checked={tableSettings.onlineSyncEnabled ?? true}
+                  onChange={(e) => updateSetting('onlineSyncEnabled', e.target.checked)}
+                />
+              </label>
+              <span className="text-[10px] text-slate-400 leading-snug">
+                When off, data stays on this computer only — no uploads to Google Drive or real-time
+                sync between devices.
+              </span>
+            </div>
             <Button
               variant="outlined"
               color="inherit"

@@ -85,7 +85,10 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
   const isSyncFromPubSub = useRef(false)
   const tableApiRef = useRef(null)
   const isChangingPage = useRef(false)
-
+  const isLoadingRef = useRef(isLoading)
+  useEffect(() => {
+    isLoadingRef.current = isLoading
+  }, [isLoading])
   useImperativeHandle(ref, () => ({
     exportToCSV: () => {
       if (tableApiRef.current) {
@@ -236,6 +239,7 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
     rowForReceive !== null &&
       rowForReceive !== undefined &&
       viewMode === 'Receive' &&
+      tableSettings.onlineSyncEnabled !== false &&
       updateGoogleDriveFiles()
   }, [rowForReceive, receiveTableData, viewMode])
 
@@ -257,16 +261,13 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
         window.electron.ipcRenderer.invoke('load-uploaded-receive-table-ids')
       ])
 
-      if (totalNumberOfReceiveRows) {
-        setTotalNumberOfReceiveRows(totalNumberOfReceiveRows)
-      }
-
+      if (totalNumberOfReceiveRows) setTotalNumberOfReceiveRows(totalNumberOfReceiveRows)
       if (tableData) setReceiveTableRowData(tableData)
 
       const currentUploadedIdsMap = uploadedIdsMap || {}
       setUploadedReceivePageDriveIds(currentUploadedIdsMap)
 
-      if (!currentUploadedIdsMap[activePage]) {
+      if (tableSettings.onlineSyncEnabled !== false && !currentUploadedIdsMap[activePage]) {
         const uploadResponse = await window.electron.ipcRenderer.invoke(
           'upload-receive-table-data-to-google-drive',
           activePage
@@ -288,9 +289,18 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
         await tableApiRef.current.setPage(activePage)
       }
 
-      setTimeout(() => {
+      setTimeout(async () => {
         isInitializingReceiveAssets.current = false
-        setIsLoading(false)
+        const hasInternet = await window.electron.ipcRenderer.invoke('check-actual-internet')
+        setIsOnline(hasInternet)
+
+        if (!hasInternet) {
+          console.log('you are offline')
+          setLoadingMessage('Fix Your Internet Connection...')
+          setIsLoading(true)
+        } else {
+          setIsLoading(false)
+        }
       }, 300)
     }
 
@@ -335,7 +345,7 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
     if (isInitializingReceiveAssets.current) return
     if (isOnline) {
       if (
-        isLoading &&
+        isLoadingRef.current &&
         !isDownloadingReceivePageData &&
         !isChangingPage.current &&
         !isPublishingActive.current
@@ -344,14 +354,14 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
       }
     } else {
       setLoadingMessage('Fix Your Internet Connection...')
-      if (!isLoading) setIsLoading(true)
+      if (!isLoadingRef.current) setIsLoading(true)
 
       const abortDriveDownload = async () => {
         await window.electron.ipcRenderer.invoke('abort-drive-download')
       }
       if (isDownloadingReceivePageData) abortDriveDownload()
     }
-  }, [isOnline, isDownloadingReceivePageData, isLoading])
+  }, [isOnline, isDownloadingReceivePageData])
 
   useEffect(() => {
     if (isFirstMountForUpload.current) {
@@ -360,6 +370,7 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
     }
 
     const ensurePageUploaded = async () => {
+      if (tableSettings.onlineSyncEnabled === false) return
       if (!uploadedReceivePageDriveIds[receivePageNumber]) {
         const uploadResponse = await window.electron.ipcRenderer.invoke(
           'upload-receive-table-data-to-google-drive',
@@ -503,6 +514,7 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
   }, [receiveTableData, dontSaveReceive])
 
   const handleCellEdit = ({ accessor, newValue, row }) => {
+    console.log('Cell edit detected:', { accessor, newValue, row })
     setDontSaveReceive(false)
     setIsLoading(true)
 
@@ -678,7 +690,7 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
           setReceivePageNumber(page)
         }
       }}
-      rowsPerPage={500}
+      rowsPerPage={1000}
       defaultHeaders={dynamicHeaders}
       rows={receiveTableData}
       height={'800px'}

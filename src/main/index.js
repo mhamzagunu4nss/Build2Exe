@@ -2,6 +2,7 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import log from 'electron-log'
 import path, { join } from 'path'
 log.initialize()
+log.transports.file.getFile().clear()
 console.log = log.log
 console.error = log.error
 console.warn = log.warn
@@ -187,7 +188,7 @@ const SCOPES = [
 ]
 let mainWindow = null
 let splashWindow = null
-const rowsPerPage = new Big(500)
+const rowsPerPage = new Big(1000)
 let currentDownloadController = null
 let isDownloadAborted = false
 
@@ -1025,7 +1026,7 @@ app.whenReady().then(async () => {
       try {
         await fsPromises.access(pubSubTableDataPath)
       } catch {
-        return false
+        return true
       }
 
       const targetRow = JSON.parse(messageJsonString)

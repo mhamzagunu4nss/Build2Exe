@@ -25,6 +25,7 @@ export const UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH = path.join(
 )
 
 const despatchTableDir = path.join(app.getPath('userData'), 'despatch_table')
+
 const receiveTableDir = path.join(app.getPath('userData'), 'receive_table')
 
 let pubSubInstance = null

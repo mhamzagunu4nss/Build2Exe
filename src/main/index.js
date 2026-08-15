@@ -10,7 +10,7 @@ console.warn = log.warn
 log.info('Application starting in production mode...')
 
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron'
-
+import started from 'electron-squirrel-startup'
 import fs, { promises as fsPromises } from 'fs'
 import {
   generateAuthUrl,
@@ -36,6 +36,9 @@ import {
   UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH
 } from '../renderer/src/helpers/helper-functions'
 
+if (started) {
+  app.quit()
+}
 const { google } = require('googleapis')
 
 import Big from 'big.js'
@@ -61,49 +64,120 @@ process.on('unhandledRejection', (reason) => {
 
   console.error(`Rejection: ${code}${message}`)
 })
+const newWorkerSignaturesPath = is.dev
+  ? path.join(__dirname, '../../resources/worker_signatures')
+  : path.join(process.resourcesPath, 'worker_signatures')
 
-const USER_DATA_DIR = app.getPath('userData')
+const newWorkerDataPath = is.dev
+  ? path.join(__dirname, '../../resources/new-worker-data.txt')
+  : path.join(process.resourcesPath, 'new-worker-data.txt')
 
-const newWorkerSignaturesPath = path.join(USER_DATA_DIR, 'worker_signatures')
-const newWorkerDataPath = path.join(USER_DATA_DIR, 'new-worker-data.txt')
-const receiveTablePagedDataFilePath = path.join(USER_DATA_DIR, 'receive_table', 'table-data')
-const despatchTableDataFilePath = path.join(USER_DATA_DIR, 'despatch_table', 'table-data')
-const pubSubTableDataPath = path.join(USER_DATA_DIR, 'pub_sub_table', 'table.txt')
+const emptyReceiveTablePageFilePath = is.dev
+  ? path.join(__dirname, '../../resources/empty_receive_table_page/empty-receive-table-page.txt')
+  : path.join(process.resourcesPath, 'empty_receive_table_page/empty-receive-table-page.txt')
+
+const emptyDespatchTablePageFilePath = is.dev
+  ? path.join(__dirname, '../../resources/empty_despatch_table_page/empty-despatch-table-page.txt')
+  : path.join(process.resourcesPath, 'empty_despatch_table_page/empty-despatch-table-page.txt')
+
+const receiveTablePagedDataFilePath = path.join(
+  app.getPath('userData'),
+  'receive_table',
+  'table-data'
+)
+
+const despatchTableDataFilePath = path.join(app.getPath('userData'), 'despatch_table', 'table-data')
+
+const pubSubTableDataPath = path.join(app.getPath('userData'), 'pub_sub_table', 'table.txt')
+
 const tempPubSubTableDataPath = path.join(
-  USER_DATA_DIR,
+  app.getPath('userData'),
   'pub_sub_table',
   'temp-pub-sub-table-save-data.txt'
 )
+
 const tempDespatchTableSaveDataFilePath = path.join(
-  USER_DATA_DIR,
+  app.getPath('userData'),
   'despatch_table',
   'temp-despatch-table-save-data.txt'
 )
+
 const tempReceiveTableSaveDataFilePath = path.join(
-  USER_DATA_DIR,
+  app.getPath('userData'),
   'receive_table',
   'temp-receive-table-save-data.txt'
 )
+
 const tempDespatchDownloadFilePath = path.join(
-  USER_DATA_DIR,
+  app.getPath('userData'),
   'despatch_table',
   'temp-despatch-table-download-data.txt'
 )
+
 const tempReceiveDownloadFilePath = path.join(
-  USER_DATA_DIR,
+  app.getPath('userData'),
   'receive_table',
   'temp-receive-table-download-data.txt'
 )
+;(async () => {
+  try {
+    await fsPromises.mkdir(path.join(app.getPath('userData'), 'despatch_table'), {
+      recursive: true
+    })
+    await fsPromises.mkdir(path.join(app.getPath('userData'), 'receive_table'), {
+      recursive: true
+    })
+    await fsPromises.mkdir(path.join(app.getPath('userData'), 'pub_sub_table'), {
+      recursive: true
+    })
 
-const peopleEnumDefaultFilePath = is.dev
+    const despatchPageCount = (await getTotalNumberOfPages()).toNumber()
+    if (despatchPageCount === 0) {
+      console.log('No despatch pages found, creating page 1...')
+      await fsPromises.copyFile(
+        emptyDespatchTablePageFilePath,
+        despatchTableDataFilePath + '_page_1.txt'
+      )
+    }
+
+    const receivePageCount = (await getTotalNumberOfReceivePages()).toNumber()
+    if (receivePageCount === 0) {
+      console.log('No receive pages found, creating page 1...')
+      await fsPromises.copyFile(
+        emptyReceiveTablePageFilePath,
+        receiveTablePagedDataFilePath + '_page_1.txt'
+      )
+    }
+
+    try {
+      await fsPromises.access(peopleEnumFilePath)
+    } catch {
+      console.log('No people list found, copying the starter list...')
+      await fsPromises.copyFile(bundledPeopleEnumFilePath, peopleEnumFilePath)
+    }
+
+    try {
+      await fsPromises.access(departmentEnumFilePath)
+    } catch {
+      console.log('No department list found, copying the starter list...')
+      await fsPromises.copyFile(bundledDepartmentEnumFilePath, departmentEnumFilePath)
+    }
+  } catch (error) {
+    console.error('Failed to set up userData table directories:', error.message)
+  }
+})()
+
+const bundledPeopleEnumFilePath = is.dev
   ? path.join(__dirname, '../../resources/people-options-enum.txt')
   : path.join(process.resourcesPath, 'people-options-enum.txt')
 
-const departmentEnumDefaultFilePath = is.dev
+const bundledDepartmentEnumFilePath = is.dev
   ? path.join(__dirname, '../../resources/department-options-enum.txt')
   : path.join(process.resourcesPath, 'department-options-enum.txt')
-const peopleEnumFilePath = path.join(USER_DATA_DIR, 'people-options-enum.txt')
-const departmentEnumFilePath = path.join(USER_DATA_DIR, 'department-options-enum.txt')
+
+const peopleEnumFilePath = path.join(app.getPath('userData'), 'people-options-enum.txt')
+
+const departmentEnumFilePath = path.join(app.getPath('userData'), 'department-options-enum.txt')
 
 const CREDENTIALS_PATH = is.dev
   ? path.join(__dirname, '../../resources/google_drive_config/credentials.json')
@@ -139,49 +213,7 @@ async function handleTokenRevocation(error) {
   return false
 }
 
-async function ensureUserDataInitialized() {
-  console.log('Checking user data folders and default files...')
-
-  await fsPromises.mkdir(path.dirname(despatchTableDataFilePath), { recursive: true })
-  await fsPromises.mkdir(path.dirname(receiveTablePagedDataFilePath), { recursive: true })
-  await fsPromises.mkdir(path.dirname(pubSubTableDataPath), { recursive: true })
-  await fsPromises.mkdir(newWorkerSignaturesPath, { recursive: true })
-  console.log('User data folders ready.')
-
-  const copyDefaultFileIfMissing = async (targetPath, defaultFilePath) => {
-    try {
-      await fsPromises.access(targetPath)
-      console.log(`Already exists, skipping copy: ${targetPath}`)
-    } catch {
-      try {
-        await fsPromises.copyFile(defaultFilePath, targetPath)
-        console.log(`Copied default file: ${defaultFilePath} -> ${targetPath}`)
-      } catch (err) {
-        console.error(`Failed to copy default file to ${targetPath}:`, err.message)
-      }
-    }
-  }
-
-  await copyDefaultFileIfMissing(peopleEnumFilePath, peopleEnumDefaultFilePath)
-  await copyDefaultFileIfMissing(departmentEnumFilePath, departmentEnumDefaultFilePath)
-
-  const despatchPage1 = despatchTableDataFilePath + '_page_1.txt'
-  await copyDefaultFileIfMissing(despatchPage1, emptyDespatchTablePageFilePath)
-
-  const receivePage1 = receiveTablePagedDataFilePath + '_page_1.txt'
-  await copyDefaultFileIfMissing(receivePage1, emptyReceiveTablePageFilePath)
-
-  try {
-    await fsPromises.access(pubSubTableDataPath)
-    console.log(`Already exists, skipping: ${pubSubTableDataPath}`)
-  } catch {
-    await fsPromises.writeFile(pubSubTableDataPath, '', 'utf8')
-    console.log(`Created empty file: ${pubSubTableDataPath}`)
-  }
-
-  console.log('User data initialization check complete.')
-}
-const TOKEN_MAX_AGE_IN_MS = 4 * 24 * 60 * 60 * 1000 // 4 days in milliseconds
+const TOKEN_MAX_AGE_IN_MS = 3 * 24 * 60 * 60 * 1000 // 3 days in milliseconds
 
 async function checkAndExpireToken() {
   try {
@@ -353,7 +385,6 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 app.whenReady().then(async () => {
-  await ensureUserDataInitialized()
   ipcMain.handle('save-department-from-window', async (event, departmentName) => {
     try {
       const newDepartmentData = { label: departmentName, value: departmentName }

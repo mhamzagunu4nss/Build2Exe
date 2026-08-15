@@ -5,7 +5,6 @@ import {
   setCredentials
 } from '../../../../resources/google_drive_config/auth'
 
-import { is } from '@electron-toolkit/utils'
 import Big from 'big.js'
 import path from 'path'
 
@@ -25,13 +24,8 @@ export const UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH = path.join(
   'receiveTableId.json'
 )
 
-const despatchTableDir = is.dev
-  ? path.join(__dirname, '../../resources/despatch_table')
-  : path.join(process.resourcesPath, 'despatch_table')
-
-const receiveTableDir = is.dev
-  ? path.join(__dirname, '../../resources/receive_table')
-  : path.join(process.resourcesPath, 'receive_table')
+const despatchTableDir = path.join(app.getPath('userData'), 'despatch_table')
+const receiveTableDir = path.join(app.getPath('userData'), 'receive_table')
 
 let pubSubInstance = null
 let topicInstance = null

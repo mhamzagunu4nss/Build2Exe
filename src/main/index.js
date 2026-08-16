@@ -10,7 +10,7 @@ console.warn = log.warn
 log.info('Application starting in production mode...')
 
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron'
-import started from 'electron-squirrel-startup'
+
 import fs, { promises as fsPromises } from 'fs'
 import {
   generateAuthUrl,
@@ -36,8 +36,11 @@ import {
   UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH
 } from '../renderer/src/helpers/helper-functions'
 
-if (started) {
-  app.quit()
+const profileArg = process.argv.find((arg) => arg.startsWith('--profile='))
+if (profileArg) {
+  const profileName = profileArg.split('=')[1]
+  const basePath = app.getPath('userData')
+  app.setPath('userData', path.join(basePath, '..', `Docutrack-${profileName}`))
 }
 const { google } = require('googleapis')
 

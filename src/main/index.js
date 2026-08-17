@@ -36,12 +36,6 @@ import {
   UPLOADED_RECEIVE_TABLE_ID_JSON_FILE_PATH
 } from '../renderer/src/helpers/helper-functions'
 
-const profileArg = process.argv.find((arg) => arg.startsWith('--profile='))
-if (profileArg) {
-  const profileName = profileArg.split('=')[1]
-  const basePath = app.getPath('userData')
-  app.setPath('userData', path.join(basePath, '..', `Docutrack-${profileName}`))
-}
 const { google } = require('googleapis')
 
 import Big from 'big.js'

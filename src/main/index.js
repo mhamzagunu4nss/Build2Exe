@@ -1,7 +1,7 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import log from 'electron-log'
 import path, { join } from 'path'
-import './profile-setup'
+
 log.initialize()
 log.transports.file.getFile().clear()
 console.log = log.log

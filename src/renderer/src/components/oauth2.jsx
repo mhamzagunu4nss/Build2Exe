@@ -43,7 +43,20 @@ const Oauth2 = ({ authUrl }) => {
     }
     loadCurrentConfig()
   }, [])
+  const formatPubSubId = (id) => {
+    let clean = id.trim()
+    if (!clean) return ''
 
+    if (!/^[a-zA-Z]/.test(clean)) {
+      clean = `sub_${clean}`
+    }
+
+    if (clean.length < 3) {
+      clean = clean.padEnd(3, '_')
+    }
+
+    return clean.slice(0, 255)
+  }
   async function handleClick() {
     console.log('Verification started. Please wait...')
     setIsVerifying(true)
@@ -55,8 +68,8 @@ const Oauth2 = ({ authUrl }) => {
       try {
         await window.electron.ipcRenderer.invoke(
           'save-pubsub-overrides',
-          topicOverride.trim(),
-          subscriptionOverride.trim()
+          formatPubSubId(topicOverride),
+          formatPubSubId(subscriptionOverride)
         )
         console.log('Overrides saved successfully.')
       } catch (error) {

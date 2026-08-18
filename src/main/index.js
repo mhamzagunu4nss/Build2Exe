@@ -469,13 +469,33 @@ app.whenReady().then(async () => {
   })
 
   ipcMain.handle('save-pubsub-overrides', async (event, topicOverride, subscriptionOverride) => {
-    if (topicOverride) {
-      await saveTopicOverride(topicOverride)
+    try {
+      if (topicOverride) {
+        await saveTopicOverride(topicOverride)
+      }
+      if (subscriptionOverride) {
+        await saveSubscriptionOverride(subscriptionOverride)
+      }
+
+      if (topicOverride || subscriptionOverride) {
+        let oAuth2Client = await loadAuthClient()
+        if (oAuth2Client) {
+          oAuth2Client = await setCredentials(oAuth2Client)
+
+          stopListening()
+
+          const subscriptionNameOrId = await createSubscription(oAuth2Client)
+          if (subscriptionNameOrId) {
+            await listenForMessages(mainWindow, subscriptionNameOrId, oAuth2Client)
+          }
+        }
+      }
+
+      return true
+    } catch (err) {
+      console.error('Error applying Pub/Sub overrides:', err.message)
+      return false
     }
-    if (subscriptionOverride) {
-      await saveSubscriptionOverride(subscriptionOverride)
-    }
-    return true
   })
 
   ipcMain.handle('is-despatch-table-already-uploaded?', async () => {

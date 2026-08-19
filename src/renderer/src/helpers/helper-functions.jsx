@@ -200,7 +200,7 @@ export async function listenForMessages(mainWindow, subscriptionNameOrId, oAuth2
               console.log('Action: Removing row from table based on remote update.')
               mainWindow.webContents.send('raw-remove-row', {
                 id: parsed.id,
-                subscriptionNameOrId: parsed.subscriptionNameOrId
+                subscriptionNameOrId: localSubscriptionNameOrId
               })
             } else {
               console.log('Action: Adding new row to table based on remote update.')
@@ -213,6 +213,7 @@ export async function listenForMessages(mainWindow, subscriptionNameOrId, oAuth2
           console.error('Failed to process incoming row update:', parseError.message)
         }
       } else {
+        console.log('localSubscriptionNameOrId is:', localSubscriptionNameOrId)
         console.log('Ignored message because it originated from this local session.')
       }
     } else {

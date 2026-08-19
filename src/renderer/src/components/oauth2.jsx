@@ -63,20 +63,6 @@ const Oauth2 = ({ authUrl }) => {
     setIsLoadingForPubSubTable(true)
     setIsLoading(true)
 
-    if (topicOverride.trim() || subscriptionOverride.trim()) {
-      console.log('Saving custom Pub/Sub overrides...')
-      try {
-        await window.electron.ipcRenderer.invoke(
-          'save-pubsub-overrides',
-          formatPubSubId(topicOverride),
-          formatPubSubId(subscriptionOverride)
-        )
-        console.log('Overrides saved successfully.')
-      } catch (error) {
-        console.error('Error: Failed to save overrides:', error)
-      }
-    }
-
     console.log('Sending authorization code to connect account...')
     try {
       const Aouth2Clieent = await window.electron.ipcRenderer.invoke('save-Token', authCode)
@@ -84,6 +70,20 @@ const Oauth2 = ({ authUrl }) => {
       if (Aouth2Clieent) {
         console.log('Success: Account connected and token saved!')
         setIsTokenCreatedAndSavedSuccessfully(true)
+
+        if (topicOverride.trim() || subscriptionOverride.trim()) {
+          console.log('Saving custom Pub/Sub overrides...')
+          try {
+            await window.electron.ipcRenderer.invoke(
+              'save-pubsub-overrides',
+              formatPubSubId(topicOverride),
+              formatPubSubId(subscriptionOverride)
+            )
+            console.log('Overrides saved successfully.')
+          } catch (error) {
+            console.error('Error: Failed to save overrides:', error)
+          }
+        }
       } else {
         console.error('Error: Main process returned false. The code might be invalid or expired.')
       }

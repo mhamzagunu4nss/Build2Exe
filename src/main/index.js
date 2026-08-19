@@ -30,6 +30,7 @@ import {
   isAuthRevokedError,
   listenForMessages,
   publishMessage,
+  resetPubSubInstances,
   saveSubscriptionOverride,
   saveTopicOverride,
   scheduleReceiveDriveSync,
@@ -201,6 +202,9 @@ async function handleTokenRevocation(error) {
     } catch (err) {
       console.log('Auth Token file unlinking skipped:', err.message)
     }
+
+    stopListening()
+    resetPubSubInstances()
 
     if (mainWindow && !mainWindow.isDestroyed()) {
       console.log('Auth Sending "token-expired" IPC event to mainWindow.')
@@ -675,6 +679,9 @@ app.whenReady().then(async () => {
     }
 
     try {
+      stopListening()
+      resetPubSubInstances()
+
       await fsPromises.access(TOKEN_PATH)
       await fsPromises.unlink(TOKEN_PATH)
       return { status: 'success' }
@@ -953,7 +960,11 @@ app.whenReady().then(async () => {
     if (!oAuth2Client) {
       return null
     }
-    return await saveToken(oAuth2Client, code)
+    const result = await saveToken(oAuth2Client, code)
+    if (result) {
+      resetPubSubInstances()
+    }
+    return result
   })
 
   ipcMain.handle('check-google-token-existence', async () => {
@@ -1079,13 +1090,14 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('save-pub-sub-table-data-asynchronous', async (event, pubsubtabledata) => {
     const dataToWrite = pubsubtabledata.map((item) => JSON.stringify(item)).join('\n')
+    const uniqueTempPath = `${tempPubSubTableDataPath}.${Date.now()}.tmp`
 
     try {
       await fsPromises.mkdir(path.dirname(pubSubTableDataPath), { recursive: true })
-      await fsPromises.writeFile(tempPubSubTableDataPath, dataToWrite, 'utf8')
+      await fsPromises.writeFile(uniqueTempPath, dataToWrite, 'utf8')
 
       try {
-        await fsPromises.rename(tempPubSubTableDataPath, pubSubTableDataPath)
+        await fsPromises.rename(uniqueTempPath, pubSubTableDataPath)
         return 'PubSub table data saved successfully!'
       } catch (error) {
         console.error('Error replacing original PubSub table data file:', error.message)
@@ -1134,8 +1146,9 @@ app.whenReady().then(async () => {
       }
 
       const dataToWrite = remainingRows.map((item) => JSON.stringify(item)).join('\n')
-      await fsPromises.writeFile(tempPubSubTableDataPath, dataToWrite, 'utf8')
-      await fsPromises.rename(tempPubSubTableDataPath, pubSubTableDataPath)
+      const uniqueTempPath = `${tempPubSubTableDataPath}.${Date.now()}.tmp`
+      await fsPromises.writeFile(uniqueTempPath, dataToWrite, 'utf8')
+      await fsPromises.rename(uniqueTempPath, pubSubTableDataPath)
 
       dialog.showMessageBox({
         type: 'info',

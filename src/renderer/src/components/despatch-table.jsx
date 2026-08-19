@@ -464,14 +464,16 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
       setIsSaving(true)
       setLoadingMessage('Saving Table Data...')
 
-      await window.electron.ipcRenderer.invoke(
-        'save-despatch-table-data-asynchronous',
-        despatchTableData,
-        pageNumber
-      )
-
-      setIsLoading(false)
-      setIsSaving(false)
+      try {
+        await window.electron.ipcRenderer.invoke(
+          'save-despatch-table-data-asynchronous',
+          despatchTableData,
+          pageNumber
+        )
+      } finally {
+        setIsLoading(false)
+        setIsSaving(false)
+      }
     }
 
     !dontSave &&

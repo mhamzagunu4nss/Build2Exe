@@ -174,12 +174,15 @@ const PubSubTable = () => {
 
     const shipNewPubSubDataToSave = async () => {
       setLoadingMessagePubSubTable('Saving PubSub Table Data...')
-      await window.electron.ipcRenderer.invoke(
-        'save-pub-sub-table-data-asynchronous',
-        pubSubTableData
-      )
-      setTimeout(() => setIsLoadingForPubSubTable(false), 100)
-      setIsEditingForPubSubTable(false)
+      try {
+        await window.electron.ipcRenderer.invoke(
+          'save-pub-sub-table-data-asynchronous',
+          pubSubTableData
+        )
+      } finally {
+        setTimeout(() => setIsLoadingForPubSubTable(false), 100)
+        setIsEditingForPubSubTable(false)
+      }
     }
 
     if (!dontSave && !isDeleting && pubSubTableData.length !== 0) {

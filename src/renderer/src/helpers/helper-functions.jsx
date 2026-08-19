@@ -30,7 +30,10 @@ const receiveTableDir = path.join(app.getPath('userData'), 'receive_table')
 
 let pubSubInstance = null
 let topicInstance = null
-
+export function resetPubSubInstances() {
+  pubSubInstance = null
+  topicInstance = null
+}
 let currentSubscription = null
 let localSubscriptionNameOrId = null
 const topicNameOrId = 'projects/docu-track-demo/topics/docu-track-changes-watch-topic'
@@ -51,6 +54,7 @@ export async function saveTopicOverride(overrideValue) {
       JSON.stringify({ topicNameOrId: overrideValue }),
       'utf-8'
     )
+    resetPubSubInstances()
     return true
   } catch (error) {
     console.error('Failed to save topic override:', error.message)
@@ -68,6 +72,7 @@ export async function saveSubscriptionOverride(overrideValue) {
       JSON.stringify({ subscriptionNameOrId: uniqueSubscriptionNameOrId }),
       'utf-8'
     )
+    resetPubSubInstances()
     return uniqueSubscriptionNameOrId
   } catch (error) {
     console.error('Failed to save subscription override:', error.message)
@@ -93,24 +98,27 @@ export async function getOrCreateSubscriptionNameOrId() {
 }
 
 export async function getPubSubClient(oAuth2Client) {
-  if (pubSubInstance) {
-    return pubSubInstance
+  if (!pubSubInstance) {
+    const projectId = await getProjectId()
+    pubSubInstance = new PubSub({
+      projectId: projectId,
+      authClient: oAuth2Client
+    })
+  } else if (oAuth2Client) {
+    pubSubInstance.authClient = oAuth2Client
   }
-
-  const projectId = await getProjectId()
-  pubSubInstance = new PubSub({
-    projectId: projectId,
-    authClient: oAuth2Client
-  })
 
   return pubSubInstance
 }
 
 export async function getTopic(oAuth2Client) {
-  if (topicInstance) return topicInstance
   const pubSubClient = await getPubSubClient(oAuth2Client)
   const retrievedTopicNameOrId = await getTopicNameOrId()
-  topicInstance = pubSubClient.topic(retrievedTopicNameOrId)
+
+  if (!topicInstance || topicInstance.name !== retrievedTopicNameOrId) {
+    topicInstance = pubSubClient.topic(retrievedTopicNameOrId)
+  }
+
   return topicInstance
 }
 

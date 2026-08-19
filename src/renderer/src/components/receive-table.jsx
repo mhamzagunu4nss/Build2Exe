@@ -501,13 +501,15 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
     const shipNewTableDataToSave = async () => {
       setLoadingMessage('Saving Receive Table Data...')
 
-      await window.electron.ipcRenderer.invoke(
-        'save-receive-table-data-asynchronous',
-        receiveTableData,
-        receivePageNumber
-      )
-
-      setIsLoading(false)
+      try {
+        await window.electron.ipcRenderer.invoke(
+          'save-receive-table-data-asynchronous',
+          receiveTableData,
+          receivePageNumber
+        )
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     !dontSaveReceive && shipNewTableDataToSave()

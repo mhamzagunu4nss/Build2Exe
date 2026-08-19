@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { SimpleTable } from '@simple-table/react'
+import { formatInTimeZone } from 'date-fns-tz'
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AppContext } from './state-provider'
 
@@ -413,7 +414,10 @@ const PubSubTable = () => {
       isEditable: isSelectable,
       type: 'date',
       filterable: true,
-      valueFormatter: ({ value }) => (value ? new Date(value).toLocaleDateString('en-GB') : '')
+      valueFormatter: ({ value }) => {
+        if (!value) return ''
+        return formatInTimeZone(new Date(value), 'UTC', 'dd/MM/yyyy')
+      }
     },
     {
       accessor: 'pubsub_registrynumber',
@@ -449,7 +453,10 @@ const PubSubTable = () => {
       isSortable: true,
       type: 'date',
       filterable: true,
-      valueFormatter: ({ value }) => (value ? new Date(value).toLocaleDateString('en-GB') : '')
+      valueFormatter: ({ value }) => {
+        if (!value) return ''
+        return formatInTimeZone(new Date(value), 'UTC', 'dd/MM/yyyy')
+      }
     },
     {
       accessor: 'pubsub_numberofletter',

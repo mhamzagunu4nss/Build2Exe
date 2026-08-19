@@ -1,6 +1,7 @@
 /* eslint-disable react/display-name */
 import { SimpleTable } from '@simple-table/react'
 import '@simple-table/react/styles.css'
+import { formatInTimeZone } from 'date-fns-tz'
 import {
   forwardRef,
   useContext,
@@ -539,7 +540,10 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
       type: 'date',
       isEditable: true,
       filterable: true,
-      valueFormatter: ({ value }) => (value ? new Date(value).toLocaleDateString('en-GB') : '')
+      valueFormatter: ({ value }) => {
+        if (!value) return ''
+        return formatInTimeZone(new Date(value), 'UTC', 'dd/MM/yyyy')
+      }
     },
     {
       accessor: 'registrynumber',
@@ -583,7 +587,10 @@ const ReceiveTable = forwardRef(({ theme }, ref) => {
       type: 'date',
       isEditable: true,
       filterable: true,
-      valueFormatter: ({ value }) => (value ? new Date(value).toLocaleDateString('en-GB') : '')
+      valueFormatter: ({ value }) => {
+        if (!value) return ''
+        return formatInTimeZone(new Date(value), 'UTC', 'dd/MM/yyyy')
+      }
     },
     {
       accessor: 'numberofletter',

@@ -1,6 +1,7 @@
 /* eslint-disable react/display-name */
 import { SimpleTable } from '@simple-table/react'
 import '@simple-table/react/styles.css'
+import { formatInTimeZone } from 'date-fns-tz'
 import {
   forwardRef,
   useContext,
@@ -520,8 +521,7 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
       filterable: true,
       valueFormatter: ({ value }) => {
         if (!value) return ''
-        const dateObj = new Date(value)
-        return isNaN(dateObj.getTime()) ? value : dateObj.toLocaleDateString('en-GB')
+        return formatInTimeZone(new Date(value), 'UTC', 'dd/MM/yyyy')
       }
     },
 
@@ -562,8 +562,7 @@ const DespatchTable = forwardRef(({ theme }, ref) => {
       filterable: true,
       valueFormatter: ({ value }) => {
         if (!value) return ''
-        const dateObj = new Date(value)
-        return isNaN(dateObj.getTime()) ? value : dateObj.toLocaleDateString('en-GB')
+        return formatInTimeZone(new Date(value), 'UTC', 'dd/MM/yyyy')
       }
     },
 

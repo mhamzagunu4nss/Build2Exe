@@ -1095,7 +1095,7 @@ app.whenReady().then(async () => {
   )
 
   ipcMain.handle('save-pub-sub-table-data-asynchronous', async (event, pubsubtabledata) => {
-    queuePubSubWrite(async () => {
+    return queuePubSubWrite(async () => {
       const dataToWrite = pubsubtabledata.map((item) => JSON.stringify(item)).join('\n')
       const uniqueTempPath = `${tempPubSubTableDataPath}.${Date.now()}.tmp`
 
@@ -1118,7 +1118,7 @@ app.whenReady().then(async () => {
   })
 
   ipcMain.handle('delete-row', async (event, messageJsonString) => {
-    queuePubSubWrite(async () => {
+    return queuePubSubWrite(async () => {
       try {
         try {
           await fsPromises.access(pubSubTableDataPath)

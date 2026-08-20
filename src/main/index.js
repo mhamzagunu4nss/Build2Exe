@@ -89,6 +89,12 @@ const despatchTableDataFilePath = path.join(app.getPath('userData'), 'despatch_t
 
 const pubSubTableDataPath = path.join(app.getPath('userData'), 'pub_sub_table', 'table.txt')
 
+let pubSubWriteQueue = Promise.resolve()
+function queuePubSubWrite(operation) {
+  pubSubWriteQueue = pubSubWriteQueue.then(operation, operation)
+  return pubSubWriteQueue
+}
+
 const tempPubSubTableDataPath = path.join(
   app.getPath('userData'),
   'pub_sub_table',
@@ -1089,79 +1095,83 @@ app.whenReady().then(async () => {
   )
 
   ipcMain.handle('save-pub-sub-table-data-asynchronous', async (event, pubsubtabledata) => {
-    const dataToWrite = pubsubtabledata.map((item) => JSON.stringify(item)).join('\n')
-    const uniqueTempPath = `${tempPubSubTableDataPath}.${Date.now()}.tmp`
-
-    try {
-      await fsPromises.mkdir(path.dirname(pubSubTableDataPath), { recursive: true })
-      await fsPromises.writeFile(uniqueTempPath, dataToWrite, 'utf8')
+    queuePubSubWrite(async () => {
+      const dataToWrite = pubsubtabledata.map((item) => JSON.stringify(item)).join('\n')
+      const uniqueTempPath = `${tempPubSubTableDataPath}.${Date.now()}.tmp`
 
       try {
-        await fsPromises.rename(uniqueTempPath, pubSubTableDataPath)
-        return 'PubSub table data saved successfully!'
-      } catch (error) {
-        console.error('Error replacing original PubSub table data file:', error.message)
-        return error.message
+        await fsPromises.mkdir(path.dirname(pubSubTableDataPath), { recursive: true })
+        await fsPromises.writeFile(uniqueTempPath, dataToWrite, 'utf8')
+
+        try {
+          await fsPromises.rename(uniqueTempPath, pubSubTableDataPath)
+          return 'PubSub table data saved successfully!'
+        } catch (error) {
+          console.error('Error replacing original PubSub table data file:', error.message)
+          return error.message
+        }
+      } catch (err) {
+        console.error('Error writing to temp file during PubSub save:', err.message)
+        return err.message
       }
-    } catch (err) {
-      console.error('Error writing to temp file during PubSub save:', err.message)
-      return err.message
-    }
+    })
   })
 
   ipcMain.handle('delete-row', async (event, messageJsonString) => {
-    try {
+    queuePubSubWrite(async () => {
       try {
-        await fsPromises.access(pubSubTableDataPath)
-      } catch {
-        return true
-      }
-
-      const targetRow = JSON.parse(messageJsonString)
-      const targetId = targetRow.id
-
-      const fileContent = await fsPromises.readFile(pubSubTableDataPath, 'utf8')
-      const lines = fileContent.split('\n').filter((line) => line.trim() !== '')
-      const remainingRows = []
-      let deletionSuccessful = false
-
-      for (const line of lines) {
-        const parsedItem = JSON.parse(line)
-
-        if (parsedItem.id === targetId) {
-          deletionSuccessful = true
-          continue
+        try {
+          await fsPromises.access(pubSubTableDataPath)
+        } catch {
+          return true
         }
-        remainingRows.push(parsedItem)
-      }
 
-      if (!deletionSuccessful) {
+        const targetRow = JSON.parse(messageJsonString)
+        const targetId = targetRow.id
+
+        const fileContent = await fsPromises.readFile(pubSubTableDataPath, 'utf8')
+        const lines = fileContent.split('\n').filter((line) => line.trim() !== '')
+        const remainingRows = []
+        let deletionSuccessful = false
+
+        for (const line of lines) {
+          const parsedItem = JSON.parse(line)
+
+          if (parsedItem.id === targetId) {
+            deletionSuccessful = true
+            continue
+          }
+          remainingRows.push(parsedItem)
+        }
+
+        if (!deletionSuccessful) {
+          dialog.showMessageBox({
+            type: 'warning',
+            title: 'Row Not Found',
+            message: `Could not find a row matching ID: ${targetId} to delete.`,
+            buttons: ['OK']
+          })
+          return false
+        }
+
+        const dataToWrite = remainingRows.map((item) => JSON.stringify(item)).join('\n')
+        const uniqueTempPath = `${tempPubSubTableDataPath}.${Date.now()}.tmp`
+        await fsPromises.writeFile(uniqueTempPath, dataToWrite, 'utf8')
+        await fsPromises.rename(uniqueTempPath, pubSubTableDataPath)
+
         dialog.showMessageBox({
-          type: 'warning',
-          title: 'Row Not Found',
-          message: `Could not find a row matching ID: ${targetId} to delete.`,
+          type: 'info',
+          title: 'Success',
+          message: `Row with ID ${targetId} was safely deleted and saved!`,
           buttons: ['OK']
         })
+        return true
+      } catch (error) {
+        console.error('Failed to handle row deletion backend processing:', error.message)
+        dialog.showErrorBox('System Error', `An error occurred during deletion: ${error.message}`)
         return false
       }
-
-      const dataToWrite = remainingRows.map((item) => JSON.stringify(item)).join('\n')
-      const uniqueTempPath = `${tempPubSubTableDataPath}.${Date.now()}.tmp`
-      await fsPromises.writeFile(uniqueTempPath, dataToWrite, 'utf8')
-      await fsPromises.rename(uniqueTempPath, pubSubTableDataPath)
-
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Success',
-        message: `Row with ID ${targetId} was safely deleted and saved!`,
-        buttons: ['OK']
-      })
-      return true
-    } catch (error) {
-      console.error('Failed to handle row deletion backend processing:', error.message)
-      dialog.showErrorBox('System Error', `An error occurred during deletion: ${error.message}`)
-      return false
-    }
+    })
   })
 
   ipcMain.handle('load-pub-sub-table-data-asynchronous', async () => {
